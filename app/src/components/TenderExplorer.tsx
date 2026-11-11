@@ -235,60 +235,9 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
   };
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
-      {/* Top Banner Navigation / Stats Header */}
-      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-zinc-950 text-xs sm:text-sm shadow-[0_0_15px_rgba(16,185,129,0.35)]">
-              GeM
-            </div>
-            <div>
-              <div className="font-semibold text-xs sm:text-sm tracking-tight text-white flex items-center gap-1.5">
-                GeM Analyser
-                <span className="text-[9px] font-mono uppercase px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  AI Command
-                </span>
-              </div>
-              <div className="text-[10px] text-zinc-500 hidden sm:block">
-                AI Matchmaking, Tender Intelligence & Bidding Pipeline
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Stats Pill */}
-          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
-            <div className="flex items-center gap-1.5 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
-              <Layers className="w-3.5 h-3.5 text-zinc-400" />
-              <span>
-                Total: <strong className="text-white">{totalBidsCount}</strong>
-              </span>
-            </div>
-            <button
-              onClick={() => {
-                setActiveTab('all');
-                setFilters((prev) => ({
-                  ...prev,
-                  urgencyFilter: 'closing_48h',
-                }));
-              }}
-              className="flex items-center gap-1 bg-zinc-900 hover:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-zinc-800 hover:border-rose-500/50 transition-colors cursor-pointer group"
-              title="Click to filter by < 48 hours closing soon"
-            >
-              <Clock className="w-3.5 h-3.5 text-rose-400 group-hover:animate-pulse" />
-              <span>
-                Urgent:{' '}
-                <strong className="text-rose-400">
-                  {currentTime ? urgentCount : '—'}
-                </strong>
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen bg-[#09090b] text-zinc-100 antialiased selection:bg-orange-500/30 selection:text-orange-200">
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5">
         <TenderHeader
           searchQuery={filters.searchQuery}
           onSearchChange={(q) => setFilters((p) => ({ ...p, searchQuery: q }))}

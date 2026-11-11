@@ -4,14 +4,6 @@ import {
   Clock,
   Sparkles,
   Building,
-  Bot,
-  Shield,
-  Brain,
-  Car,
-  Database,
-  Radio,
-  Code,
-  GraduationCap,
   Plus,
   Check,
   ChevronDown,
@@ -30,22 +22,6 @@ interface TenderCardProps {
   currentTime?: number;
 }
 
-function getKeywordIcon(kw: string) {
-  const lower = kw.toLowerCase();
-  if (lower.includes('chatbot')) return <Bot className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('security') || lower.includes('cyber')) return <Shield className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('artificial') || lower.includes('ai') || lower.includes('machine learning') || lower.includes('deep learning'))
-    return <Brain className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('parking') || lower.includes('ev') || lower.includes('mobility'))
-    return <Car className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('analytics') || lower.includes('data') || lower.includes('intelligence'))
-    return <Database className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('iot') || lower.includes('sensor')) return <Radio className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('learning') || lower.includes('lms')) return <GraduationCap className="w-3 h-3 text-orange-400" />;
-  if (lower.includes('software') || lower.includes('development')) return <Code className="w-3 h-3 text-orange-400" />;
-  return <Sparkles className="w-3 h-3 text-orange-400" />;
-}
-
 export function TenderCard({
   bid,
   onSelect,
@@ -62,11 +38,11 @@ export function TenderCard({
 
   const fit = computeFitScore(bid);
 
-  // 60-30-10 Card Shell (30% slate structure with 10% orange accents)
+  // 60-30-10 Card Shell (30% neutral slate structure with 10% orange accents)
   const cardStyle = isExpired
     ? 'border-zinc-800/60 bg-zinc-950/40 opacity-60 grayscale-[35%] hover:opacity-90 hover:grayscale-0'
     : isUrgent
-    ? 'border-orange-500/70 bg-zinc-900/90 shadow-lg shadow-orange-500/10 hover:border-orange-400'
+    ? 'border-orange-500/70 bg-[#121318] shadow-lg shadow-orange-500/10 hover:border-orange-400'
     : 'border-zinc-800/90 bg-[#121318] hover:bg-[#181920] hover:border-zinc-700';
 
   return (
@@ -74,18 +50,14 @@ export function TenderCard({
       onClick={() => onSelect(bid)}
       className={`group relative flex flex-col rounded-xl border p-4 sm:p-5 transition-all duration-200 shadow-sm hover:shadow-xl cursor-pointer ${cardStyle}`}
     >
-      {/* 1. Top Bar: Bid Number & Category Chips + Top-Right Strategic Orange Fit Score Pill */}
+      {/* 1. Top Bar: Bid Number & Category Chips + Top-Right Integrated Fit Score Pill */}
       <div className="flex items-start justify-between gap-2 mb-2.5">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700/60 text-zinc-300">
             {bid.bid_number}
           </span>
           {/* Procurement Type Tag (30% Neutral Structure) */}
-          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded border ${
-            fit.procurementType === 'Software / SaaS'
-              ? 'bg-zinc-800/90 text-orange-400 border-orange-500/40'
-              : 'bg-zinc-900 text-zinc-400 border-zinc-700/80'
-          }`}>
+          <span className="px-2 py-0.5 text-[10px] font-semibold rounded bg-zinc-900 text-zinc-300 border border-zinc-700/80">
             {fit.procurementType}
           </span>
           {bid.is_boq && (
@@ -100,25 +72,24 @@ export function TenderCard({
           )}
         </div>
 
-        {/* 10% Strategic High-Contrast Accent Pill at Top-Right */}
+        {/* 10% Strategic High-Contrast Accent Pill: Integrated with label */}
         <div className="flex items-center gap-1.5 shrink-0">
           <span
             className={`px-2.5 py-0.5 text-xs font-bold rounded-full border font-mono inline-flex items-center gap-1 transition-all ${
               fit.score >= 80
-                ? 'bg-orange-500 text-white border-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.45)]'
+                ? 'bg-orange-500 text-white border-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.4)]'
                 : fit.score >= 60
                 ? 'bg-orange-500/20 border-orange-500/50 text-orange-300'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-400'
             }`}
             title={`Fit Score: ${fit.score}% (${fit.recommendation})`}
           >
-            <Sparkles className="w-3 h-3" />
-            <span>{fit.score}%</span>
+            <span>{fit.score}% Fit</span>
           </span>
         </div>
       </div>
 
-      {/* 2. Main Title (30% Slate Typography with Accent Hover) */}
+      {/* 2. Main Title: Strict line-clamp-2 for clean uniform heights */}
       <div className="space-y-1 mb-2">
         <h3
           className="font-semibold text-zinc-100 group-hover:text-orange-400 transition-colors line-clamp-2 text-sm sm:text-base leading-snug"
@@ -186,22 +157,21 @@ export function TenderCard({
         )}
       </div>
 
-      {/* 5. Detected Intelligence Tags with Categorical Icons */}
+      {/* 5. Detected Intelligence Tags: Clean, neutral, text-only pills to avoid icon clutter */}
       {bid.matched_keywords && bid.matched_keywords.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3 mt-auto">
           {bid.matched_keywords.slice(0, 3).map((kw) => (
             <span
               key={kw}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-zinc-900/90 border border-zinc-800 text-zinc-300"
+              className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-zinc-900/90 border border-zinc-800 text-zinc-300"
             >
-              {getKeywordIcon(kw)}
-              <span>{kw}</span>
+              {kw}
             </span>
           ))}
         </div>
       )}
 
-      {/* 6. Action Toolbar: 10% High-Contrast Primary Quick View CTA + Direct Pipeline Add */}
+      {/* 6. Action Toolbar: Primary Quick View CTA + Clean Single + Track CTA + Tool buttons */}
       <div
         className="pt-2.5 border-t border-zinc-800/80 flex items-center justify-between gap-2"
         onClick={(e) => e.stopPropagation()}
@@ -214,26 +184,27 @@ export function TenderCard({
           Quick View
         </button>
 
-        {/* 1-Tap Kanban / Bookmark Button */}
+        {/* Clean Pipeline CTA: Single '+' and clean 'Track' / 'In Pipeline' label */}
         <button
           onClick={onToggleSave}
           className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium inline-flex items-center gap-1 transition-all cursor-pointer ${
             isSaved
               ? 'bg-orange-500/20 border-orange-500/50 text-orange-300'
-              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700'
           }`}
-          title={isSaved ? 'In Kanban Pipeline' : 'Add to Kanban Pipeline'}
+          title={isSaved ? 'In Kanban Pipeline' : 'Track in Pipeline'}
         >
           {isSaved ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Plus className="w-3.5 h-3.5" />}
-          <span>{isSaved ? 'In Pipeline' : '+ Pipeline'}</span>
+          <span>{isSaved ? 'Tracked' : 'Track'}</span>
         </button>
 
-        {/* Secondary Tool Icons */}
+        {/* Clear Tool Buttons: AI Brief + GeM PDF */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => onOpenAIBrief(bid)}
             className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-orange-400 border border-zinc-800 transition-colors"
             title="Instant AI Brief"
+            aria-label="Instant AI Brief"
           >
             <Sparkles className="w-3.5 h-3.5" />
           </button>
@@ -242,7 +213,8 @@ export function TenderCard({
             target="_blank"
             rel="noopener noreferrer"
             className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-colors"
-            title="Download PDF"
+            title="Download GeM PDF"
+            aria-label="Download GeM PDF"
           >
             <FileText className="w-3.5 h-3.5" />
           </a>
