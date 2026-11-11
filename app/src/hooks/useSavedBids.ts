@@ -16,6 +16,7 @@ function getStoredSavedBids(): string[] {
 
 let listeners: Array<() => void> = [];
 let cachedSavedIds: Set<string> = new Set();
+const SERVER_SNAPSHOT = new Set<string>();
 let isInitialized = false;
 
 function emitChange() {
@@ -40,7 +41,7 @@ function getSnapshot(): Set<string> {
 }
 
 function getServerSnapshot(): Set<string> {
-  return new Set();
+  return SERVER_SNAPSHOT;
 }
 
 export function useSavedBids() {
@@ -64,5 +65,10 @@ export function useSavedBids() {
 
   const isSaved = useCallback((id: string) => savedIds.has(id), [savedIds]);
 
-  return { savedIds, toggleSave, isSaved };
+  return {
+    savedIds,
+    toggleSave,
+    isSaved,
+    savedCount: savedIds.size,
+  };
 }

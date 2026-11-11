@@ -1,84 +1,60 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useSyncExternalStore } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Bid, FilterState } from '@/types/bid';
 import { FilterSidebar } from './FilterSidebar';
+import { TenderHeader } from './TenderHeader';
 import { TenderCard } from './TenderCard';
 import { TenderTable } from './TenderTable';
 import { TenderModal } from './TenderModal';
-import { TenderHeader } from './TenderHeader';
 import { useSavedBids } from '@/hooks/useSavedBids';
 import { exportBidsToCSV, exportBidsToJSON } from '@/utils/export';
-import { Layers, Clock, AlertCircle } from 'lucide-react';
+import { Layers, Clock, AlertCircle, Bookmark, Compass } from 'lucide-react';
 
-interface ExplorerProps {
+interface TenderExplorerProps {
   initialBids: Bid[];
-  lastUpdated: string;
+  lastUpdated?: string;
 }
 
-const initialFilters: FilterState = {
-  searchQuery: '',
-  selectedDepartments: [],
-  selectedKeywords: [],
-  raFilter: 'all',
-  boqFilter: 'all',
-  urgencyFilter: 'all',
-  sortBy: 'deadline_asc',
-};
-
-// External store for current minute to avoid useEffect setState cascading render warning
-let timeListeners: Array<() => void> = [];
-let currentTimeSnapshot: number | undefined = undefined;
-
-if (typeof window !== 'undefined') {
-  currentTimeSnapshot = Date.now();
-  setInterval(() => {
-    currentTimeSnapshot = Date.now();
-    for (const l of timeListeners) l();
-  }, 60000);
-}
-
-function subscribeTime(listener: () => void) {
-  timeListeners = [...timeListeners, listener];
-  return () => {
-    timeListeners = timeListeners.filter((l) => l !== listener);
-  };
-}
-
-function getTimeSnapshot() {
-  return currentTimeSnapshot;
-}
-
-function getServerTimeSnapshot() {
-  return undefined;
-}
-
-export function TenderExplorer({ initialBids }: ExplorerProps) {
-  const [bids, setBids] = useState<Bid[]>(initialBids);
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
+export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps) {
+  const [bids] = useState<Bid[]>(initialBids);
+  const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
-  const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const currentTime = useSyncExternalStore(subscribeTime, getTimeSnapshot, getServerTimeSnapshot);
+  // Client-side ticker for countdown calculations
+  const [currentTime, setCurrentTime] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    setCurrentTime(Date.now());
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const [filters, setFilters] = useState<FilterState>({
+    searchQuery: '',
+    selectedDepartments: [],
+    selectedKeywords: [],
+    raFilter: 'all',
+    boqFilter: 'all',
+    urgencyFilter: 'all',
+    sortBy: 'closing_soon',
+  });
+
   const { savedIds, toggleSave, isSaved } = useSavedBids();
 
-  // Try to load fresh bids client-side if public bids json is updated
-  useEffect(() => {
-    let ignore = false;
-    fetch('/data/bids.json')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!ignore && data && Array.isArray(data.bids) && data.bids.length > 0) {
-          setBids(data.bids);
-        }
-      })
-      .catch((e) => console.log('Using static server bids', e));
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  // Metrics
+  const totalBidsCount = bids.length;
+  const urgentCount = useMemo(() => {
+    if (!currentTime) return 0;
+    return bids.filter((b) => {
+      const diff = new Date(b.end_date).getTime() - currentTime;
+      return diff > 0 && diff < 48 * 3600 * 1000;
+    }).length;
+  }, [bids, currentTime]);
 
   // Compute Aggregations for Sidebar
   const departmentCounts = useMemo(() => {
@@ -138,34 +114,38 @@ export function TenderExplorer({ initialBids }: ExplorerProps) {
       }
 
       // Keyword Filter
-      if (
-        filters.selectedKeywords.length > 0 &&
-        !filters.selectedKeywords.some((k) =>
-          bid.matched_keywords?.includes(k)
-        )
-      ) {
+      if (filters.selectedKeywords.length > 0) {
+        const hasMatchingKw = (bid.matched_keywords || []).some((k) =>
+          filters.selectedKeywords.includes(k)
+        );
+        if (!hasMatchingKw) return false;
+      }
+
+      // Reverse Auction Filter
+      if (filters.raFilter === 'ra_only' && !bid.reverse_auction) {
+        return false;
+      }
+      if (filters.raFilter === 'no_ra' && bid.reverse_auction) {
         return false;
       }
 
-      // Reverse Auction
-      if (filters.raFilter === 'ra_only' && !bid.reverse_auction) return false;
-      if (filters.raFilter === 'no_ra' && bid.reverse_auction) return false;
+      // BoQ Filter
+      if (filters.boqFilter === 'boq_only' && !bid.is_boq) {
+        return false;
+      }
+      if (filters.boqFilter === 'no_boq' && bid.is_boq) {
+        return false;
+      }
 
-      // BoQ
-      if (filters.boqFilter === 'boq_only' && !bid.is_boq) return false;
-      if (filters.boqFilter === 'no_boq' && bid.is_boq) return false;
-
-      // Urgency filter (if client timestamp is available)
-      if (filters.urgencyFilter !== 'all' && currentTime) {
-        const end = new Date(bid.end_date).getTime();
-        const diffHours = (end - currentTime) / (1000 * 60 * 60);
-
+      // Urgency Filter
+      if (currentTime && filters.urgencyFilter !== 'all') {
+        const diff = new Date(bid.end_date).getTime() - currentTime;
         if (filters.urgencyFilter === 'closing_48h') {
-          if (diffHours < 0 || diffHours > 48) return false;
+          if (diff <= 0 || diff > 48 * 3600 * 1000) return false;
         } else if (filters.urgencyFilter === 'closing_7d') {
-          if (diffHours < 0 || diffHours > 168) return false;
+          if (diff <= 0 || diff > 7 * 24 * 3600 * 1000) return false;
         } else if (filters.urgencyFilter === 'active') {
-          if (diffHours <= 168) return false;
+          if (diff <= 7 * 24 * 3600 * 1000) return false;
         }
       }
 
@@ -173,40 +153,43 @@ export function TenderExplorer({ initialBids }: ExplorerProps) {
     });
   }, [bids, filters, activeTab, savedIds, currentTime]);
 
+  // Sort Pipeline
   const sortedBids = useMemo(() => {
-    return [...filteredBids].sort((a, b) => {
-      if (filters.sortBy === 'deadline_asc') {
-        return new Date(a.end_date).getTime() - new Date(b.end_date).getTime();
-      }
-      if (filters.sortBy === 'deadline_desc') {
-        return new Date(b.end_date).getTime() - new Date(a.end_date).getTime();
-      }
-      if (filters.sortBy === 'quantity_desc') {
-        return b.quantity - a.quantity;
-      }
-      if (filters.sortBy === 'quantity_asc') {
-        return a.quantity - b.quantity;
-      }
-      if (filters.sortBy === 'start_desc') {
-        return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
-      }
-      return 0;
-    });
+    const list = [...filteredBids];
+    switch (filters.sortBy) {
+      case 'closing_soon':
+        return list.sort(
+          (a, b) =>
+            new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
+        );
+      case 'closing_latest':
+        return list.sort(
+          (a, b) =>
+            new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+        );
+      case 'quantity_high':
+        return list.sort((a, b) => b.quantity - a.quantity);
+      case 'quantity_low':
+        return list.sort((a, b) => a.quantity - b.quantity);
+      case 'recent_start':
+        return list.sort(
+          (a, b) =>
+            new Date(b.start_date || 0).getTime() -
+            new Date(a.start_date || 0).getTime()
+        );
+      default:
+        return list;
+    }
   }, [filteredBids, filters.sortBy]);
-
-  // Overall key intelligence stats
-  const totalBidsCount = bids.length;
-  const urgentCount = useMemo(() => {
-    if (!currentTime) return 0;
-    return bids.filter((b) => {
-      const diff = new Date(b.end_date).getTime() - currentTime;
-      return diff > 0 && diff <= 48 * 3600 * 1000;
-    }).length;
-  }, [bids, currentTime]);
 
   const handleResetFilters = () => {
     setFilters({
-      ...initialFilters,
+      searchQuery: '',
+      selectedDepartments: [],
+      selectedKeywords: [],
+      raFilter: 'all',
+      boqFilter: 'all',
+      urgencyFilter: 'all',
       sortBy: filters.sortBy,
     });
   };
@@ -270,9 +253,10 @@ export function TenderExplorer({ initialBids }: ExplorerProps) {
           onExportJSON={() => exportBidsToJSON(sortedBids)}
           onOpenMobileFilters={() => setIsMobileFiltersOpen(true)}
           totalFiltered={sortedBids.length}
+          bids={bids}
         />
 
-        {/* Layout: Sidebar + Tender Stream */}
+        {/* Layout: Sticky Sidebar + Tender Stream */}
         <div className="flex items-start gap-6">
           <FilterSidebar
             departments={departmentCounts}
@@ -288,7 +272,28 @@ export function TenderExplorer({ initialBids }: ExplorerProps) {
 
           {/* Results Area */}
           <div className="flex-1 min-w-0">
-            {sortedBids.length === 0 ? (
+            {activeTab === 'saved' && sortedBids.length === 0 ? (
+              /* Enhanced Empty State for Saved Pipeline */
+              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-12 text-center flex flex-col items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
+                  <Bookmark className="w-7 h-7" />
+                </div>
+                <h3 className="text-lg font-semibold text-zinc-100">
+                  Your Saved Pipeline is Empty
+                </h3>
+                <p className="text-xs text-zinc-400 max-w-md mt-1.5 mb-6 leading-relaxed">
+                  Track and monitor prospective government bids here. Click the <strong>Save</strong> button on any tender card or table row to bookmark bids into your personal pipeline.
+                </p>
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer shadow-sm hover:shadow"
+                >
+                  <Compass className="w-4 h-4 text-emerald-400" />
+                  Explore All Tenders
+                </button>
+              </div>
+            ) : sortedBids.length === 0 ? (
+              /* Standard Empty Filter State */
               <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-12 text-center flex flex-col items-center justify-center">
                 <AlertCircle className="w-12 h-12 text-zinc-600 mb-3" />
                 <h3 className="text-base font-semibold text-zinc-200">

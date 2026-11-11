@@ -22,6 +22,11 @@ export interface BidsData {
 }
 
 export type SortOption =
+  | 'closing_soon'
+  | 'closing_latest'
+  | 'quantity_high'
+  | 'quantity_low'
+  | 'recent_start'
   | 'deadline_asc'
   | 'deadline_desc'
   | 'quantity_desc'
