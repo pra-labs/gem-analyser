@@ -174,9 +174,9 @@ export function TenderHeader({
         </div>
       </div>
 
-      {/* Control Bar: Active only when on tenders view */}
+      {/* Sticky Filter & Search Control Bar during scrolling */}
       {activeTab !== 'analytics' && (
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="sticky top-16 z-20 py-2.5 px-3 -mx-3 rounded-2xl bg-zinc-950/90 backdrop-blur-md border border-zinc-800/80 shadow-lg flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search Bar with Autocomplete Dropdown */}
           <div className="relative flex-1" ref={searchContainerRef}>
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
@@ -260,7 +260,7 @@ export function TenderHeader({
               <option value="recent_start">🆕 Recently Published</option>
             </select>
 
-            {/* Cards vs Table View Toggle (only in All Tenders) */}
+            {/* Cards vs Table View Toggle (Functional Grid vs High-Density List) */}
             {activeTab === 'all' && (
               <div className="flex items-center p-0.5 rounded-xl bg-zinc-900 border border-zinc-800">
                 <button
@@ -270,7 +270,7 @@ export function TenderHeader({
                       ? 'bg-zinc-800 text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="Card Grid View"
+                  title="Card Grid View (2-Column)"
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
@@ -281,7 +281,7 @@ export function TenderHeader({
                       ? 'bg-zinc-800 text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="High-Density Table View"
+                  title="High-Density List View (Scan 3x more tenders)"
                 >
                   <List className="w-4 h-4" />
                 </button>

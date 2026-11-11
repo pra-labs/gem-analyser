@@ -382,6 +382,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
                 <TenderTable
                   bids={sortedBids}
                   onSelect={setSelectedBid}
+                  onOpenAIBrief={setBriefBid}
                   savedIds={savedIds}
                   onToggleSave={toggleSave}
                   currentTime={currentTime}
