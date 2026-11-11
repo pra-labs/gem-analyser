@@ -2,15 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Hallmark & Craft Floor Foundation */
+/* 60-30-10 Pro Dark Slate & Energetic Tangerine System */
 :root {
+  /* 60% Dominant Canvas (Deep Void / Deep Slate) */
   --background: #09090b;
-  --foreground: #fafafa;
-  --card-bg: #0d0e12;
+  --foreground: #f4f4f5;
+
+  /* 30% Structural Secondary (Cards, Surfaces, Borders & Structure) */
+  --card-bg: #121318;
+  --card-surface: #181920;
   --card-border: #27272a;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-rose: #f43f5e;
+  --text-muted: #a1a1aa;
+
+  /* 10% High-Contrast Accent (Energetic Orange / Tangerine) */
+  --accent-orange: #f97316;
+  --accent-orange-hover: #ea580c;
+  --accent-orange-glow: rgba(249, 115, 22, 0.25);
+  --accent-orange-subtle: rgba(249, 115, 22, 0.12);
 }
 
 html,
@@ -23,9 +31,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Instant focus visible ring */
+/* Instant focus visible ring with 10% Tangerine Accent */
 :focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid #f97316;
   outline-offset: 2px;
 }
 
@@ -54,7 +62,7 @@ body {
   border-radius: 4px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(113, 113, 122, 0.6);
+  background: #f97316;
 }
 
 /* Hide scrollbars completely where needed */
