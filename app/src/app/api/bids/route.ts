@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
-import { Bid } from "@/types/bid";
+import { Bid, BidsData } from "@/types/bid";
+import bidsDataJson from "@/data/bids.json";
 
 interface StoredBid extends Bid {
   priority_tier?: string;
@@ -16,19 +15,8 @@ export async function GET(request: Request) {
     const ministry = searchParams.get("ministry")?.toLowerCase();
     const limit = parseInt(searchParams.get("limit") || "100", 10);
 
-    const dataFilePath = path.join(process.cwd(), "public", "data", "bids.json");
-
-    let fileContent: string;
-    try {
-      fileContent = await fs.readFile(dataFilePath, "utf-8");
-    } catch {
-      // Fallback in local monorepo root
-      const fallbackPath = path.resolve(process.cwd(), "..", "data", "bids.json");
-      fileContent = await fs.readFile(fallbackPath, "utf-8");
-    }
-
-    const data = JSON.parse(fileContent);
-    let results: StoredBid[] = data.bids || [];
+    const data = bidsDataJson as unknown as BidsData;
+    let results: StoredBid[] = (data.bids as StoredBid[]) || [];
 
     // Filter by query if provided
     if (query) {
@@ -48,16 +36,24 @@ export async function GET(request: Request) {
       results = results.filter((b) => (b.ministry || "").toLowerCase().includes(ministry));
     }
 
+    // Slice to limit
+    const sliced = results.slice(0, Math.max(1, Math.min(limit, 500)));
+
     return NextResponse.json({
-      updated_at: data.updated_at,
+      status: "success",
       total_matched: results.length,
-      total_bids: data.total_bids,
-      bids: results.slice(0, limit),
+      count: sliced.length,
+      updated_at: data.updated_at,
+      bids: sliced,
+    }, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      }
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("API error in /api/bids:", error);
     return NextResponse.json(
-      { error: "Failed to fetch bids", details: message },
+      { status: "error", message: "Failed to query bids dataset" },
       { status: 500 }
     );
   }
