@@ -136,10 +136,10 @@ export function TenderHeader({
         </div>
 
         {/* Tab switcher: All Tenders vs Saved Pipeline Kanban vs Intelligence Analytics */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 self-start sm:self-auto overflow-x-auto max-w-full">
           <button
             onClick={() => onTabChange('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -149,7 +149,7 @@ export function TenderHeader({
           </button>
           <button
             onClick={() => onTabChange('saved')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'saved'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
                 : savedCount > 0
@@ -158,27 +158,27 @@ export function TenderHeader({
             }`}
           >
             <Kanban className={`w-3.5 h-3.5 ${savedCount > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
-            Pipeline Kanban ({savedCount})
+            Pipeline ({savedCount})
           </button>
           <button
             onClick={() => onTabChange('analytics')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'analytics'
                 ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-            Intelligence & Trends
+            Trends
           </button>
         </div>
       </div>
 
       {/* Sticky Filter & Search Control Bar during scrolling */}
       {activeTab !== 'analytics' && (
-        <div className="sticky top-16 z-20 py-2.5 px-3 -mx-3 rounded-2xl bg-zinc-950/90 backdrop-blur-md border border-zinc-800/80 shadow-lg flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="sticky top-14 z-20 py-2.5 px-3 rounded-2xl bg-zinc-950/90 backdrop-blur-md border border-zinc-800 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           {/* Search Bar with Autocomplete Dropdown */}
-          <div className="relative flex-1" ref={searchContainerRef}>
+          <div className="relative flex-1 min-w-0" ref={searchContainerRef}>
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input
               type="text"
@@ -188,8 +188,8 @@ export function TenderHeader({
                 setShowSuggestions(true);
               }}
               onFocus={() => setShowSuggestions(true)}
-              placeholder="Search by tender title, category, bid number, department..."
-              className="w-full pl-10 pr-9 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-inner"
+              placeholder="Search by tender title, category, bid number..."
+              className="w-full pl-10 pr-9 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-inner"
             />
             {searchQuery && (
               <button
@@ -235,32 +235,32 @@ export function TenderHeader({
             )}
           </div>
 
-          {/* Right Tools Toolbar */}
-          <div className="flex items-center gap-2 self-end md:self-auto">
+          {/* Right Tools Toolbar with Mobile Friendly Wrap */}
+          <div className="flex items-center gap-2 justify-between sm:justify-end flex-wrap sm:flex-nowrap">
             {/* Mobile Filter Trigger */}
             <button
               onClick={onOpenMobileFilters}
-              className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white"
+              className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              Filters
+              <span>Filters</span>
             </button>
 
             {/* Sort By Dropdown */}
             <select
               value={sortBy}
               onChange={(e) => onSortChange(e.target.value as SortOption)}
-              className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 cursor-pointer"
+              className="px-2.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 cursor-pointer max-w-[170px] sm:max-w-none truncate"
             >
-              <option value="fit_score_desc">🎯 AI Fit Score: High to Low</option>
+              <option value="fit_score_desc">🎯 AI Fit Score</option>
               <option value="closing_soon">⚡ Closing Soonest</option>
               <option value="closing_latest">⏳ Closing Latest</option>
-              <option value="quantity_high">📦 Quantity: High to Low</option>
-              <option value="quantity_low">📦 Quantity: Low to High</option>
-              <option value="recent_start">🆕 Recently Published</option>
+              <option value="quantity_high">📦 Quantity: High</option>
+              <option value="quantity_low">📦 Quantity: Low</option>
+              <option value="recent_start">🆕 Published</option>
             </select>
 
-            {/* Cards vs Table View Toggle (Functional Grid vs High-Density List) */}
+            {/* Cards vs Table View Toggle (only in All Tenders) */}
             {activeTab === 'all' && (
               <div className="flex items-center p-0.5 rounded-xl bg-zinc-900 border border-zinc-800">
                 <button
@@ -270,7 +270,7 @@ export function TenderHeader({
                       ? 'bg-zinc-800 text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="Card Grid View (2-Column)"
+                  title="Card Grid View"
                 >
                   <LayoutGrid className="w-4 h-4" />
                 </button>
@@ -281,7 +281,7 @@ export function TenderHeader({
                       ? 'bg-zinc-800 text-white shadow-sm'
                       : 'text-zinc-500 hover:text-zinc-300'
                   }`}
-                  title="High-Density List View (Scan 3x more tenders)"
+                  title="List Table View"
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -292,10 +292,10 @@ export function TenderHeader({
             <div className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                title="Export Bids"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Export</span>
+                <Download className="w-4 h-4" />
               </button>
 
               {showExportMenu && (
