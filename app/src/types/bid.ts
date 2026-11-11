@@ -17,6 +17,7 @@ export interface Bid {
   fitScore?: number;
   fitRecommendation?: 'HIGH FIT' | 'GOOD MATCH' | 'EXPLORE' | 'LOW FIT';
   fitReason?: string;
+  procurementType?: 'Software / SaaS' | 'Services / Manpower' | 'Hardware / Equipment' | 'Goods / Supply';
 }
 
 export interface BidsData {
@@ -46,6 +47,7 @@ export interface FilterState {
   raFilter: 'all' | 'ra_only' | 'no_ra';
   boqFilter: 'all' | 'boq_only' | 'no_boq';
   urgencyFilter: 'all' | 'active_only' | 'closing_48h' | 'closing_7d' | 'expired_only' | 'active';
+  procurementTypeFilter?: 'all' | 'software_only' | 'services_only' | 'hardware_only';
   sortBy: SortOption;
   minQuantity?: number;
 }

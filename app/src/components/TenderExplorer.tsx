@@ -30,6 +30,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
         fitScore: assessment.score,
         fitRecommendation: assessment.recommendation,
         fitReason: assessment.reason,
+        procurementType: assessment.procurementType,
       };
     });
   });
@@ -59,6 +60,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
     raFilter: 'all',
     boqFilter: 'all',
     urgencyFilter: 'active_only',
+    procurementTypeFilter: 'all',
     sortBy: 'fit_score_desc',
   });
 
@@ -119,6 +121,19 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
           k.toLowerCase().includes(q)
         );
         if (!inNum && !inTitle && !inCat && !inDept && !inKw) {
+          return false;
+        }
+      }
+
+      // Procurement Type Filter (Software vs Services vs Hardware)
+      if (filters.procurementTypeFilter && filters.procurementTypeFilter !== 'all') {
+        if (filters.procurementTypeFilter === 'software_only' && bid.procurementType !== 'Software / SaaS') {
+          return false;
+        }
+        if (filters.procurementTypeFilter === 'services_only' && bid.procurementType !== 'Services / Manpower') {
+          return false;
+        }
+        if (filters.procurementTypeFilter === 'hardware_only' && bid.procurementType !== 'Hardware / Equipment') {
           return false;
         }
       }
@@ -214,6 +229,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
       raFilter: 'all',
       boqFilter: 'all',
       urgencyFilter: 'active_only',
+      procurementTypeFilter: 'all',
       sortBy: 'fit_score_desc',
     });
   };
@@ -222,27 +238,27 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
     <div className="min-h-screen bg-black text-zinc-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-200">
       {/* Top Banner Navigation / Stats Header */}
       <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-zinc-950 text-sm shadow-[0_0_15px_rgba(16,185,129,0.35)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-500 flex items-center justify-center font-bold text-zinc-950 text-xs sm:text-sm shadow-[0_0_15px_rgba(16,185,129,0.35)]">
               GeM
             </div>
             <div>
-              <div className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
-                GeM Analyser Portal
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  AI Command Center
+              <div className="font-semibold text-xs sm:text-sm tracking-tight text-white flex items-center gap-1.5">
+                GeM Analyser
+                <span className="text-[9px] font-mono uppercase px-1 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  AI Command
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500">
+              <div className="text-[10px] text-zinc-500 hidden sm:block">
                 AI Matchmaking, Tender Intelligence & Bidding Pipeline
               </div>
             </div>
           </div>
 
           {/* Quick Stats Pill */}
-          <div className="hidden sm:flex items-center gap-4 text-xs font-mono text-zinc-400">
-            <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+          <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <div className="flex items-center gap-1.5 bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
               <Layers className="w-3.5 h-3.5 text-zinc-400" />
               <span>
                 Total: <strong className="text-white">{totalBidsCount}</strong>
@@ -256,12 +272,12 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
                   urgencyFilter: 'closing_48h',
                 }));
               }}
-              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-rose-950/40 px-3 py-1.5 rounded-lg border border-zinc-800 hover:border-rose-500/50 transition-colors cursor-pointer group"
+              className="flex items-center gap-1 bg-zinc-900 hover:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-zinc-800 hover:border-rose-500/50 transition-colors cursor-pointer group"
               title="Click to filter by < 48 hours closing soon"
             >
               <Clock className="w-3.5 h-3.5 text-rose-400 group-hover:animate-pulse" />
               <span>
-                Urgent (&lt;48h):{' '}
+                Urgent:{' '}
                 <strong className="text-rose-400">
                   {currentTime ? urgentCount : '—'}
                 </strong>
@@ -272,7 +288,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         <TenderHeader
           searchQuery={filters.searchQuery}
           onSearchChange={(q) => setFilters((p) => ({ ...p, searchQuery: q }))}
@@ -289,10 +305,8 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
           totalFiltered={sortedBids.length}
           bids={bids}
           urgentCount={urgentCount}
-          onSelectUrgentFilter={() => {
-            setActiveTab('all');
-            setFilters((p) => ({ ...p, urgencyFilter: 'closing_48h' }));
-          }}
+          filters={filters}
+          setFilters={setFilters}
         />
 
         {/* Tab 1: Intelligence Analytics Dashboard */}
