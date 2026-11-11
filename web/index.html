@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeM Tender Analyser | PraLabs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --surface: #121826;
+      --surface-elevated: #1a2234;
+      --border: #232d42;
+      --border-focus: #3b82f6;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --tag-bg: #1e293b;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    header {
+      background: rgba(18, 24, 38, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      padding: 1rem 2rem;
+    }
+
+    .nav-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-by {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      margin-left: 0.25rem;
+    }
+
+    .header-stats {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .stat-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .stat-pill strong {
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* Filter & Search Bar */
+    .controls-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .search-input-wrapper svg {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-right: 0.25rem;
+    }
+
+    .pill {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .pill:hover {
+      color: var(--text);
+      border-color: var(--text-dim);
+    }
+
+    .pill.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    /* Grid & Cards */
+    .bids-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .bid-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 1rem;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bid-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--text-dim);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .bid-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-ra {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-boq {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-dept {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .card-meta-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      padding: 0.85rem;
+      background: var(--surface-elevated);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .meta-label {
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .meta-val {
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+    }
+
+    .meta-val.urgency-high {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .meta-val.urgency-med {
+      color: var(--warning);
+    }
+
+    .keywords-row {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .kw-tag {
+      background: var(--tag-bg);
+      color: #93c5fd;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.15s ease;
+    }
+
+    .btn-download:hover {
+      background: #2563eb;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 5rem 2rem;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+    }
+
+    .empty-state svg {
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-top: auto;
+    }
+
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <div class="brand">
+        <span class="logo-badge">GeM</span>
+        <span class="brand-title">Tender Analyser</span>
+        <span class="brand-by">by PraLabs</span>
+      </div>
+      <div class="header-stats">
+        <div class="stat-pill">Total Active: <strong id="stat-total">0</strong></div>
+        <div class="stat-pill">Last Sync: <strong id="stat-sync">-</strong></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls-panel">
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by title, bid number, department, or keyword...">
+        </div>
+      </div>
+
+      <div class="filter-pills">
+        <span class="filter-label">Filter:</span>
+        <button class="pill active" data-filter="all">All Bids</button>
+        <button class="pill" data-filter="Artificial Intelligence">AI & ML</button>
+        <button class="pill" data-filter="Chatbot">Chatbots</button>
+        <button class="pill" data-filter="Data Analytics">Data Analytics</button>
+        <button class="pill" data-filter="Smart Parking">Smart Parking / IoT</button>
+        <button class="pill" data-filter="Software Development">Software Dev</button>
+        <button class="pill" data-filter="closing-soon">Closing Soon (≤ 7 Days)</button>
+        <button class="pill" data-filter="ra-only">Reverse Auction (RA)</button>
+      </div>
+    </section>
+
+    <div id="bidsGrid" class="bids-grid">
+      <!-- Cards rendered here via JS -->
+    </div>
+  </main>
+
+  <footer>
+    <p>PraLabs GeM Tender Analyser &bull; Open-source automated public procurement intelligence &bull; <a href="https://github.com/pra-labs/gem-analyser" target="_blank">GitHub Repo</a></p>
+  </footer>
+
+  <script>
+    let allBids = [];
+    let activeFilter = 'all';
+    let searchQuery = '';
+
+    function formatRelativeDate(isoStr) {
+      if (!isoStr) return 'N/A';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return 'N/A';
+      
+      const now = new Date();
+      const diffMs = d - now;
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      const formatted = d.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+
+      if (diffDays < 0) return `${formatted} (Expired)`;
+      if (diffDays === 0) return `${formatted} (Today!)`;
+      if (diffDays === 1) return `${formatted} (Tomorrow)`;
+      return `${formatted} (${diffDays}d left)`;
+    }
+
+    function getUrgencyClass(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      const diffDays = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 3) return 'urgency-high';
+      if (diffDays <= 7) return 'urgency-med';
+      return '';
+    }
+
+    function renderBids() {
+      const grid = document.getElementById('bidsGrid');
+      const now = new Date();
+
+      const filtered = allBids.filter(bid => {
+        // Keyword / Category Filter
+        if (activeFilter === 'closing-soon') {
+          const d = new Date(bid.end_date);
+          const days = (d - now) / (1000 * 60 * 60 * 24);
+          if (days > 7 || days < 0) return false;
+        } else if (activeFilter === 'ra-only') {
+          if (!bid.reverse_auction) return false;
+        } else if (activeFilter !== 'all') {
+          const matchKw = (bid.matched_keywords || []).some(k => k.toLowerCase().includes(activeFilter.toLowerCase()));
+          const matchCat = (bid.category || '').toLowerCase().includes(activeFilter.toLowerCase());
+          if (!matchKw && !matchCat) return false;
+        }
+
+        // Search Query Filter
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const bidNo = (bid.bid_number || '').toLowerCase();
+          const cat = (bid.category || '').toLowerCase();
+          const dept = (bid.department || '').toLowerCase();
+          const title = (bid.title || '').toLowerCase();
+          const kws = (bid.matched_keywords || []).join(' ').toLowerCase();
+
+          if (!bidNo.includes(q) && !cat.includes(q) && !dept.includes(q) && !title.includes(q) && !kws.includes(q)) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      document.getElementById('stat-total').innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <h3>No matching bids found</h3>
+            <p>Try clearing your search term or selecting another category.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(bid => {
+        const urgencyClass = getUrgencyClass(bid.end_date);
+        const keywordsHtml = (bid.matched_keywords || []).slice(0, 3).map(k => `<span class="kw-tag">${k}</span>`).join('');
+        
+        return `
+          <div class="bid-card">
+            <div>
+              <div class="card-header">
+                <span class="bid-number">${bid.bid_number || 'GEM BID'}</span>
+                <div class="badges">
+                  ${bid.reverse_auction ? '<span class="badge badge-ra">RA Enabled</span>' : ''}
+                  ${bid.is_boq ? '<span class="badge badge-boq">BoQ</span>' : ''}
+                </div>
+              </div>
+              <h3 class="card-title" title="${bid.category}">${bid.category || bid.title || 'Untitled Bid Item'}</h3>
+              <p class="card-dept">🏛️ ${bid.department || 'Govt Department / PSU'}</p>
+            </div>
+
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-label">Total Quantity</span>
+                <span class="meta-val">${bid.quantity || 1} units</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Bid End Date</span>
+                <span class="meta-val ${urgencyClass}">${formatRelativeDate(bid.end_date)}</span>
+              </div>
+            </div>
+
+            ${keywordsHtml ? `<div class="keywords-row">${keywordsHtml}</div>` : ''}
+
+            <div class="card-footer">
+              <a href="${bid.doc_url}" target="_blank" rel="noopener noreferrer" class="btn-download">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Bid PDF
+              </a>
+              <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">ID: ${bid.id}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch('../data/bids.json');
+        if (!res.ok) throw new Error('Failed to load bids.json');
+        const data = await res.json();
+        allBids = data.bids || [];
+        
+        document.getElementById('stat-total').innerText = allBids.length;
+        if (data.updated_at) {
+          const syncDate = new Date(data.updated_at);
+          document.getElementById('stat-sync').innerText = syncDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        renderBids();
+      } catch (err) {
+        console.error('Error loading data:', err);
+        document.getElementById('bidsGrid').innerHTML = `
+          <div class="empty-state">
+            <h3>Unable to load bids data</h3>
+            <p>Ensure <code>data/bids.json</code> has been generated via the scraper.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.filter-pills .pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-pills .pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        renderBids();
+      });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderBids();
+    });
+
+    loadData();
+  </script>
+</body>
+</html>
