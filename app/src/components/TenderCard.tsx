@@ -52,10 +52,21 @@ export function TenderCard({
   currentTime,
 }: TenderCardProps) {
   const timeRem = getTimeRemaining(bid.end_date, currentTime);
+  const isUrgent = timeRem.badgeVariant === 'urgent';
+  const isWarning = timeRem.badgeVariant === 'warning';
+  const isExpired = timeRem.badgeVariant === 'expired';
+
+  const cardStyle = isExpired
+    ? 'border-zinc-800/60 bg-zinc-950/40 opacity-60 grayscale-[35%] hover:opacity-90 hover:grayscale-0'
+    : isUrgent
+    ? 'border-rose-500/50 bg-zinc-950 shadow-lg shadow-rose-500/10 hover:border-rose-400'
+    : 'border-zinc-800/80 bg-zinc-950/90 hover:bg-zinc-900/70 hover:border-zinc-700';
 
   return (
-    <div className="group relative flex flex-col bg-zinc-950/90 hover:bg-zinc-900/70 border border-zinc-800/80 hover:border-zinc-700 rounded-xl p-5 transition-all duration-200 shadow-sm hover:shadow-xl">
-      {/* Top Bar: Bid Number & Category Chips */}
+    <div
+      className={`group relative flex flex-col rounded-xl border p-5 transition-all duration-200 shadow-sm hover:shadow-xl ${cardStyle}`}
+    >
+      {/* Top Bar: Bid Number & Category Chips + Top-Right Bookmark Button */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-zinc-900 border border-zinc-700/60 text-zinc-300">
@@ -73,39 +84,70 @@ export function TenderCard({
           )}
         </div>
 
-        {/* Pulsating / Urgent Deadline Badge */}
-        {timeRem.badgeVariant === 'urgent' ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.25)] animate-pulse">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-            {timeRem.text}
-          </span>
-        ) : timeRem.badgeVariant === 'warning' ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            <Clock className="w-3 h-3" />
-            {timeRem.text}
-          </span>
-        ) : (
-          <span className="text-[11px] font-mono text-zinc-400">
-            {timeRem.text}
-          </span>
-        )}
+        {/* Right side: Status Tag + Clean Bookmark Icon */}
+        <div className="flex items-center gap-2">
+          {isUrgent ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+              {timeRem.text}
+            </span>
+          ) : isWarning ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <Clock className="w-3 h-3" />
+              {timeRem.text}
+            </span>
+          ) : isExpired ? (
+            <span className="text-[11px] font-mono text-zinc-500 px-2 py-0.5 rounded bg-zinc-900/80 border border-zinc-800">
+              Expired
+            </span>
+          ) : (
+            <span className="text-[11px] font-mono text-zinc-400">
+              {timeRem.text}
+            </span>
+          )}
+
+          {/* Icon-only Bookmark Button at Top-Right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSave();
+            }}
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              isSaved
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                : 'bg-zinc-900/80 border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700'
+            }`}
+            title={isSaved ? 'Remove from Saved Pipeline' : 'Save to Pipeline'}
+          >
+            {isSaved ? (
+              <BookmarkCheck className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Bookmark className="w-4 h-4" />
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* Main Title & Department */}
+      {/* Main Title & Department with full title tooltip */}
       <div
         className="cursor-pointer space-y-1 mb-3.5"
         onClick={() => onSelect(bid)}
       >
-        <h3 className="font-semibold text-zinc-100 group-hover:text-emerald-400 transition-colors line-clamp-2 text-base leading-snug">
+        <h3
+          className="font-semibold text-zinc-100 group-hover:text-emerald-400 transition-colors line-clamp-2 text-base leading-snug"
+          title={bid.title || bid.category}
+        >
           {bid.title || bid.category}
         </h3>
         <p className="text-xs text-zinc-400 flex items-center gap-1.5 truncate">
           <Building className="w-3.5 h-3.5 shrink-0 text-zinc-500" />
-          <span className="truncate">{bid.department || 'Unspecified Department'}</span>
+          <span className="truncate" title={bid.department}>
+            {bid.department || 'Unspecified Department'}
+          </span>
         </p>
       </div>
 
-      {/* Detected Intelligence Tags with Distinct Categorical Icons */}
+      {/* Detected Intelligence Tags with Categorical Icons */}
       {bid.matched_keywords && bid.matched_keywords.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-4">
           {bid.matched_keywords.map((kw) => (
@@ -140,52 +182,34 @@ export function TenderCard({
         </div>
       </div>
 
-      {/* Standardized Unified Action Toolbar */}
+      {/* Standardized Primary vs Secondary Action Toolbar */}
       <div className="pt-3 border-t border-zinc-800 flex items-center justify-between text-xs">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSave();
-          }}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border font-medium transition-all ${
-            isSaved
-              ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.15)]'
-              : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
-          }`}
-          title={isSaved ? 'Remove from Saved Pipeline' : 'Save to Pipeline'}
-        >
-          {isSaved ? (
-            <>
-              <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Saved</span>
-            </>
-          ) : (
-            <>
-              <Bookmark className="w-3.5 h-3.5" />
-              <span>Save</span>
-            </>
-          )}
-        </button>
+        <span className="text-zinc-500 font-mono text-[11px]">
+          End: {formatDateTime(bid.end_date).split(',')[0]}
+        </span>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onSelect(bid)}
-            className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium transition-colors cursor-pointer"
-          >
-            Quick View
-          </button>
+          {/* Secondary Action: Official PDF Link */}
           <a
             href={bid.doc_url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors font-medium"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-900/80 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
             title="Download Official GeM PDF Document"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-zinc-400" />
             <span>PDF</span>
             <ExternalLink className="w-3 h-3 opacity-60" />
           </a>
+
+          {/* Primary Action: Quick View with solid high-contrast accent */}
+          <button
+            onClick={() => onSelect(bid)}
+            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-semibold text-white shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/40 cursor-pointer"
+          >
+            Quick View
+          </button>
         </div>
       </div>
     </div>

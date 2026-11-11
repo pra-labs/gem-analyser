@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, X, RefreshCw, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, RefreshCw, Search, ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
 import { FilterState } from '@/types/bid';
 
 interface SidebarProps {
@@ -27,6 +27,7 @@ export function FilterSidebar({
 }: SidebarProps) {
   const [deptSearch, setDeptSearch] = useState('');
   const [isExpandedDept, setIsExpandedDept] = useState(false);
+  const [isExpandedTags, setIsExpandedTags] = useState(false);
 
   const toggleDepartment = (dept: string) => {
     setFilters((prev) => {
@@ -61,7 +62,9 @@ export function FilterSidebar({
 
   const visibleDepartments = isExpandedDept || deptSearch.trim().length > 0
     ? filteredDepartments
-    : filteredDepartments.slice(0, 7);
+    : filteredDepartments.slice(0, 6);
+
+  const visibleKeywords = isExpandedTags ? keywords : keywords.slice(0, 8);
 
   const activeFiltersCount =
     (filters.searchQuery ? 1 : 0) +
@@ -69,7 +72,7 @@ export function FilterSidebar({
     filters.selectedKeywords.length +
     (filters.raFilter !== 'all' ? 1 : 0) +
     (filters.boqFilter !== 'all' ? 1 : 0) +
-    (filters.urgencyFilter !== 'all' ? 1 : 0);
+    (filters.urgencyFilter !== 'active_only' ? 1 : 0);
 
   const sidebarContent = (
     <div className="flex flex-col h-full space-y-5 text-sm">
@@ -95,17 +98,18 @@ export function FilterSidebar({
         )}
       </div>
 
-      {/* Urgency Filter */}
+      {/* Urgency & Active/Expired Toggle */}
       <div className="space-y-2">
         <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          Urgency / Deadline
+          Status & Deadline
         </label>
         <div className="grid grid-cols-2 gap-1.5">
           {[
-            { id: 'all', label: 'All Active' },
+            { id: 'active_only', label: '🟢 Active Bids' },
             { id: 'closing_48h', label: '⚡ < 48 Hours' },
             { id: 'closing_7d', label: '⏳ < 7 Days' },
-            { id: 'active', label: 'Active (>7d)' },
+            { id: 'expired_only', label: '📁 Expired Only' },
+            { id: 'all', label: 'All (Inc. Expired)' },
           ].map((item) => {
             const isSelected = filters.urgencyFilter === item.id;
             return (
@@ -120,10 +124,10 @@ export function FilterSidebar({
                 className={`py-1.5 px-2 rounded-md text-xs font-medium border text-center transition-all ${
                   isSelected
                     ? item.id === 'closing_48h'
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 font-semibold'
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 font-semibold shadow-sm'
                       : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-semibold'
                     : 'bg-zinc-900/60 border-zinc-800/80 text-zinc-400 hover:text-zinc-200'
-                }`}
+                } ${item.id === 'all' ? 'col-span-2' : ''}`}
               >
                 {item.label}
               </button>
@@ -137,7 +141,7 @@ export function FilterSidebar({
         <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Reverse Auction (RA)
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           {[
             { id: 'all', label: 'All' },
             { id: 'ra_only', label: 'RA Only' },
@@ -168,7 +172,7 @@ export function FilterSidebar({
         <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Bill of Quantities (BoQ)
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           {[
             { id: 'all', label: 'All' },
             { id: 'boq_only', label: 'BoQ Only' },
@@ -194,22 +198,37 @@ export function FilterSidebar({
         </div>
       </div>
 
-      {/* Keyword Category Tags */}
+      {/* Keyword Category Tags - Compact Cloud with Show More */}
       {keywords.length > 0 && (
         <div className="space-y-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            Detected Intelligence Tags
-          </label>
-          <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-            {keywords.map((kw) => {
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              Tags ({keywords.length})
+            </label>
+            {keywords.length > 8 && (
+              <button
+                onClick={() => setIsExpandedTags(!isExpandedTags)}
+                className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer"
+              >
+                {isExpandedTags ? (
+                  <>Less <ChevronUp className="w-3 h-3" /></>
+                ) : (
+                  <>More <ChevronDown className="w-3 h-3" /></>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 scrollbar-thin">
+            {visibleKeywords.map((kw) => {
               const active = filters.selectedKeywords.includes(kw.name);
               return (
                 <button
                   key={kw.name}
                   onClick={() => toggleKeyword(kw.name)}
-                  className={`px-2 py-1 rounded text-xs border font-medium transition-all ${
+                  className={`px-2 py-1 rounded-md text-xs border font-medium transition-all ${
                     active
-                      ? 'bg-teal-500/20 border-teal-500/40 text-teal-200'
+                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200 shadow-sm'
                       : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
                   }`}
                 >
@@ -222,21 +241,21 @@ export function FilterSidebar({
         </div>
       )}
 
-      {/* Ministry / Department - Searchable and Collapsible */}
+      {/* Ministry / Department - Searchable, Compact & Scrollbar-thin */}
       <div className="space-y-2 flex flex-col">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
             Departments ({departments.length})
           </label>
-          {departments.length > 7 && (
+          {departments.length > 6 && (
             <button
               onClick={() => setIsExpandedDept(!isExpandedDept)}
               className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5 cursor-pointer"
             >
               {isExpandedDept ? (
-                <>Show less <ChevronUp className="w-3 h-3" /></>
+                <>Less <ChevronUp className="w-3 h-3" /></>
               ) : (
-                <>View all <ChevronDown className="w-3 h-3" /></>
+                <>All <ChevronDown className="w-3 h-3" /></>
               )}
             </button>
           )}
@@ -262,8 +281,8 @@ export function FilterSidebar({
           )}
         </div>
 
-        {/* Scrollable Department list */}
-        <div className="space-y-1 pr-1 max-h-56 overflow-y-auto">
+        {/* Scrollbar-thin Department list */}
+        <div className="space-y-1 pr-1 max-h-52 overflow-y-auto scrollbar-thin">
           {visibleDepartments.length === 0 ? (
             <div className="text-xs text-zinc-500 py-2 text-center">
               No matching departments
@@ -315,7 +334,7 @@ export function FilterSidebar({
   return (
     <>
       {/* Desktop Sticky Sidebar */}
-      <aside className="hidden lg:block w-72 shrink-0 bg-zinc-950/80 backdrop-blur-md p-4 rounded-xl border border-zinc-800/80 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto z-10 shadow-lg">
+      <aside className="hidden lg:block w-72 shrink-0 bg-zinc-950/80 backdrop-blur-md p-4 rounded-xl border border-zinc-800/80 sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin z-10 shadow-lg">
         {sidebarContent}
       </aside>
 
@@ -326,7 +345,7 @@ export function FilterSidebar({
             className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={onCloseMobile}
           />
-          <div className="relative w-80 max-w-[85vw] bg-zinc-950 p-5 h-full overflow-y-auto border-r border-zinc-800 shadow-2xl flex flex-col z-10">
+          <div className="relative w-80 max-w-[85vw] bg-zinc-950 p-5 h-full overflow-y-auto scrollbar-thin border-r border-zinc-800 shadow-2xl flex flex-col z-10">
             <div className="flex justify-end mb-2">
               <button
                 onClick={onCloseMobile}

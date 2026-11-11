@@ -31,6 +31,8 @@ interface HeaderProps {
   onOpenMobileFilters: () => void;
   totalFiltered: number;
   bids?: Bid[];
+  urgentCount?: number;
+  onSelectUrgentFilter?: () => void;
 }
 
 export function TenderHeader({
@@ -48,6 +50,8 @@ export function TenderHeader({
   onOpenMobileFilters,
   totalFiltered,
   bids = [],
+  urgentCount = 0,
+  onSelectUrgentFilter,
 }: HeaderProps) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -132,7 +136,7 @@ export function TenderHeader({
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 self-start sm:self-auto">
           <button
             onClick={() => onTabChange('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-zinc-800 text-white shadow-sm'
                 : 'text-zinc-400 hover:text-zinc-200'
@@ -142,13 +146,15 @@ export function TenderHeader({
           </button>
           <button
             onClick={() => onTabChange('saved')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               activeTab === 'saved'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
+                : savedCount > 0
+                ? 'text-zinc-300 hover:text-white'
+                : 'text-zinc-500 opacity-70 hover:opacity-100'
             }`}
           >
-            <BookmarkCheck className="w-3.5 h-3.5 text-amber-400" />
+            <BookmarkCheck className={`w-3.5 h-3.5 ${savedCount > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
             Saved Pipeline ({savedCount})
           </button>
         </div>
@@ -185,7 +191,7 @@ export function TenderHeader({
               <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-900 bg-zinc-900/40">
                 Suggested Matches
               </div>
-              <div className="max-h-60 overflow-y-auto divide-y divide-zinc-900">
+              <div className="max-h-60 overflow-y-auto divide-y divide-zinc-900 scrollbar-thin">
                 {suggestions.map((item, idx) => (
                   <button
                     key={idx}
@@ -193,7 +199,7 @@ export function TenderHeader({
                       onSearchChange(item.label);
                       setShowSuggestions(false);
                     }}
-                    className="w-full px-3.5 py-2 flex items-center justify-between hover:bg-zinc-900 text-left transition-colors"
+                    className="w-full px-3.5 py-2 flex items-center justify-between hover:bg-zinc-900 text-left transition-colors cursor-pointer"
                   >
                     <div className="flex items-center gap-2 truncate">
                       {item.type === 'bid' && <Hash className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
@@ -242,7 +248,7 @@ export function TenderHeader({
           <div className="flex items-center p-0.5 rounded-xl bg-zinc-900 border border-zinc-800">
             <button
               onClick={() => onViewModeChange('cards')}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 viewMode === 'cards'
                   ? 'bg-zinc-800 text-white shadow-sm'
                   : 'text-zinc-500 hover:text-zinc-300'
@@ -253,7 +259,7 @@ export function TenderHeader({
             </button>
             <button
               onClick={() => onViewModeChange('table')}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 viewMode === 'table'
                   ? 'bg-zinc-800 text-white shadow-sm'
                   : 'text-zinc-500 hover:text-zinc-300'
@@ -268,7 +274,7 @@ export function TenderHeader({
           <div className="relative">
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Export</span>
@@ -281,7 +287,7 @@ export function TenderHeader({
                     onExportCSV();
                     setShowExportMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
                   CSV Format
@@ -291,7 +297,7 @@ export function TenderHeader({
                     onExportJSON();
                     setShowExportMenu(false);
                   }}
-                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2"
+                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
                 >
                   <FileCode className="w-3.5 h-3.5 text-cyan-400" />
                   JSON Format

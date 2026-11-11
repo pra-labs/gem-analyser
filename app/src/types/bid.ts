@@ -40,7 +40,7 @@ export interface FilterState {
   selectedKeywords: string[];
   raFilter: 'all' | 'ra_only' | 'no_ra';
   boqFilter: 'all' | 'boq_only' | 'no_boq';
-  urgencyFilter: 'all' | 'closing_48h' | 'closing_7d' | 'active';
+  urgencyFilter: 'all' | 'active_only' | 'closing_48h' | 'closing_7d' | 'expired_only' | 'active';
   sortBy: SortOption;
   minQuantity?: number;
 }

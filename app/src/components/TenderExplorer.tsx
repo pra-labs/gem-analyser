@@ -16,7 +16,7 @@ interface TenderExplorerProps {
   lastUpdated?: string;
 }
 
-export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps) {
+export function TenderExplorer({ initialBids }: TenderExplorerProps) {
   const [bids] = useState<Bid[]>(initialBids);
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
@@ -34,13 +34,14 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
     return () => clearInterval(interval);
   }, []);
 
+  // Default to active bids only so expired tenders don't pollute initial view
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     selectedDepartments: [],
     selectedKeywords: [],
     raFilter: 'all',
     boqFilter: 'all',
-    urgencyFilter: 'all',
+    urgencyFilter: 'active_only',
     sortBy: 'closing_soon',
   });
 
@@ -137,13 +138,17 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
         return false;
       }
 
-      // Urgency Filter
+      // Urgency & Active/Expired Filter
       if (currentTime && filters.urgencyFilter !== 'all') {
         const diff = new Date(bid.end_date).getTime() - currentTime;
-        if (filters.urgencyFilter === 'closing_48h') {
+        if (filters.urgencyFilter === 'active_only') {
+          if (diff <= 0) return false;
+        } else if (filters.urgencyFilter === 'closing_48h') {
           if (diff <= 0 || diff > 48 * 3600 * 1000) return false;
         } else if (filters.urgencyFilter === 'closing_7d') {
           if (diff <= 0 || diff > 7 * 24 * 3600 * 1000) return false;
+        } else if (filters.urgencyFilter === 'expired_only') {
+          if (diff > 0) return false;
         } else if (filters.urgencyFilter === 'active') {
           if (diff <= 7 * 24 * 3600 * 1000) return false;
         }
@@ -189,7 +194,7 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
       selectedKeywords: [],
       raFilter: 'all',
       boqFilter: 'all',
-      urgencyFilter: 'all',
+      urgencyFilter: 'active_only',
       sortBy: filters.sortBy,
     });
   };
@@ -216,7 +221,7 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
             </div>
           </div>
 
-          {/* Quick Stats Pill */}
+          {/* Quick Stats Pill with Clickable Quick-Filter Trigger */}
           <div className="hidden sm:flex items-center gap-4 text-xs font-mono text-zinc-400">
             <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
               <Layers className="w-3.5 h-3.5 text-zinc-400" />
@@ -224,15 +229,24 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
                 Total: <strong className="text-white">{totalBidsCount}</strong>
               </span>
             </div>
-            <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
-              <Clock className="w-3.5 h-3.5 text-rose-400" />
+            <button
+              onClick={() => {
+                setFilters((prev) => ({
+                  ...prev,
+                  urgencyFilter: 'closing_48h',
+                }));
+              }}
+              className="flex items-center gap-1.5 bg-zinc-900 hover:bg-rose-950/40 px-3 py-1.5 rounded-lg border border-zinc-800 hover:border-rose-500/50 transition-colors cursor-pointer group"
+              title="Click to filter by < 48 hours closing soon"
+            >
+              <Clock className="w-3.5 h-3.5 text-rose-400 group-hover:animate-pulse" />
               <span>
                 Urgent (&lt;48h):{' '}
                 <strong className="text-rose-400">
                   {currentTime ? urgentCount : '—'}
                 </strong>
               </span>
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -254,6 +268,10 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
           onOpenMobileFilters={() => setIsMobileFiltersOpen(true)}
           totalFiltered={sortedBids.length}
           bids={bids}
+          urgentCount={urgentCount}
+          onSelectUrgentFilter={() =>
+            setFilters((p) => ({ ...p, urgencyFilter: 'closing_48h' }))
+          }
         />
 
         {/* Layout: Sticky Sidebar + Tender Stream */}
@@ -273,7 +291,7 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
           {/* Results Area */}
           <div className="flex-1 min-w-0">
             {activeTab === 'saved' && sortedBids.length === 0 ? (
-              /* Enhanced Empty State for Saved Pipeline */
+              /* Empty State for Saved Pipeline */
               <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-12 text-center flex flex-col items-center justify-center shadow-lg">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
                   <Bookmark className="w-7 h-7" />
@@ -282,7 +300,7 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
                   Your Saved Pipeline is Empty
                 </h3>
                 <p className="text-xs text-zinc-400 max-w-md mt-1.5 mb-6 leading-relaxed">
-                  Track and monitor prospective government bids here. Click the <strong>Save</strong> button on any tender card or table row to bookmark bids into your personal pipeline.
+                  Track and monitor prospective government bids here. Click the bookmark icon at the top-right of any tender card or table row to bookmark bids into your personal pipeline.
                 </p>
                 <button
                   onClick={() => setActiveTab('all')}
@@ -304,7 +322,7 @@ export function TenderExplorer({ initialBids, lastUpdated }: TenderExplorerProps
                 </p>
                 <button
                   onClick={handleResetFilters}
-                  className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors"
+                  className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors cursor-pointer"
                 >
                   Reset all filters
                 </button>
