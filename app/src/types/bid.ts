@@ -13,6 +13,10 @@ export interface Bid {
   doc_url: string;
   matched_keywords?: string[];
   scraped_at: string;
+  // Computed AI Matchmaking & Intelligence fields
+  fitScore?: number;
+  fitRecommendation?: 'HIGH FIT' | 'GOOD MATCH' | 'EXPLORE' | 'LOW FIT';
+  fitReason?: string;
 }
 
 export interface BidsData {
@@ -22,6 +26,7 @@ export interface BidsData {
 }
 
 export type SortOption =
+  | 'fit_score_desc'
   | 'closing_soon'
   | 'closing_latest'
   | 'quantity_high'
@@ -43,4 +48,18 @@ export interface FilterState {
   urgencyFilter: 'all' | 'active_only' | 'closing_48h' | 'closing_7d' | 'expired_only' | 'active';
   sortBy: SortOption;
   minQuantity?: number;
+}
+
+export type PipelineStage =
+  | 'saved'
+  | 'review'
+  | 'prep'
+  | 'submitted'
+  | 'won';
+
+export interface PipelineItem {
+  id: string;
+  stage: PipelineStage;
+  notes?: string;
+  updatedAt: string;
 }

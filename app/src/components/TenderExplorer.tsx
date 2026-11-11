@@ -7,8 +7,12 @@ import { TenderHeader } from './TenderHeader';
 import { TenderCard } from './TenderCard';
 import { TenderTable } from './TenderTable';
 import { TenderModal } from './TenderModal';
+import { AIBriefModal } from './AIBriefModal';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { PipelineKanban } from './PipelineKanban';
 import { useSavedBids } from '@/hooks/useSavedBids';
 import { exportBidsToCSV, exportBidsToJSON } from '@/utils/export';
+import { computeFitScore } from '@/utils/aiScoring';
 import { Layers, Clock, AlertCircle, Bookmark, Compass } from 'lucide-react';
 
 interface TenderExplorerProps {
@@ -17,10 +21,23 @@ interface TenderExplorerProps {
 }
 
 export function TenderExplorer({ initialBids }: TenderExplorerProps) {
-  const [bids] = useState<Bid[]>(initialBids);
+  const [bids] = useState<Bid[]>(() => {
+    // Enrich with computed AI Fit scores upfront
+    return initialBids.map((b) => {
+      const assessment = computeFitScore(b);
+      return {
+        ...b,
+        fitScore: assessment.score,
+        fitRecommendation: assessment.recommendation,
+        fitReason: assessment.reason,
+      };
+    });
+  });
+
   const [selectedBid, setSelectedBid] = useState<Bid | null>(null);
+  const [briefBid, setBriefBid] = useState<Bid | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'saved' | 'analytics'>('all');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   // Client-side ticker for countdown calculations
@@ -34,7 +51,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Default to active bids only so expired tenders don't pollute initial view
+  // Default to active bids only and AI Fit Score High-to-Low
   const [filters, setFilters] = useState<FilterState>({
     searchQuery: '',
     selectedDepartments: [],
@@ -42,10 +59,10 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
     raFilter: 'all',
     boqFilter: 'all',
     urgencyFilter: 'active_only',
-    sortBy: 'closing_soon',
+    sortBy: 'fit_score_desc',
   });
 
-  const { savedIds, toggleSave, isSaved } = useSavedBids();
+  const { savedIds, toggleSave, isSaved, getStage, updateStage } = useSavedBids();
 
   // Metrics
   const totalBidsCount = bids.length;
@@ -86,7 +103,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
   // High-performance filter & sort pipeline
   const filteredBids = useMemo(() => {
     return bids.filter((bid) => {
-      // Tab filter (Saved pipeline)
+      // Tab filter (Saved pipeline handled separately in Kanban)
       if (activeTab === 'saved' && !savedIds.has(bid.id)) {
         return false;
       }
@@ -162,6 +179,8 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
   const sortedBids = useMemo(() => {
     const list = [...filteredBids];
     switch (filters.sortBy) {
+      case 'fit_score_desc':
+        return list.sort((a, b) => (b.fitScore || 0) - (a.fitScore || 0));
       case 'closing_soon':
         return list.sort(
           (a, b) =>
@@ -195,7 +214,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
       raFilter: 'all',
       boqFilter: 'all',
       urgencyFilter: 'active_only',
-      sortBy: filters.sortBy,
+      sortBy: 'fit_score_desc',
     });
   };
 
@@ -211,17 +230,17 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
             <div>
               <div className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
                 GeM Analyser Portal
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                  v2.0
+                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  AI Command Center
                 </span>
               </div>
               <div className="text-[11px] text-zinc-500">
-                AI Intelligence & Tender Procurement Tracker
+                AI Matchmaking, Tender Intelligence & Bidding Pipeline
               </div>
             </div>
           </div>
 
-          {/* Quick Stats Pill with Clickable Quick-Filter Trigger */}
+          {/* Quick Stats Pill */}
           <div className="hidden sm:flex items-center gap-4 text-xs font-mono text-zinc-400">
             <div className="flex items-center gap-1.5 bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
               <Layers className="w-3.5 h-3.5 text-zinc-400" />
@@ -231,6 +250,7 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
             </div>
             <button
               onClick={() => {
+                setActiveTab('all');
                 setFilters((prev) => ({
                   ...prev,
                   urgencyFilter: 'closing_48h',
@@ -269,88 +289,107 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
           totalFiltered={sortedBids.length}
           bids={bids}
           urgentCount={urgentCount}
-          onSelectUrgentFilter={() =>
-            setFilters((p) => ({ ...p, urgencyFilter: 'closing_48h' }))
-          }
+          onSelectUrgentFilter={() => {
+            setActiveTab('all');
+            setFilters((p) => ({ ...p, urgencyFilter: 'closing_48h' }));
+          }}
         />
 
-        {/* Layout: Sticky Sidebar + Tender Stream */}
-        <div className="flex items-start gap-6">
-          <FilterSidebar
-            departments={departmentCounts}
-            keywords={keywordCounts}
-            filters={filters}
-            setFilters={setFilters}
-            totalMatching={sortedBids.length}
-            totalBids={totalBidsCount}
-            onReset={handleResetFilters}
-            isOpenMobile={isMobileFiltersOpen}
-            onCloseMobile={() => setIsMobileFiltersOpen(false)}
-          />
+        {/* Tab 1: Intelligence Analytics Dashboard */}
+        {activeTab === 'analytics' ? (
+          <AnalyticsDashboard bids={bids} />
+        ) : activeTab === 'saved' ? (
+          /* Tab 2: Saved Pipeline Kanban */
+          savedIds.size === 0 ? (
+            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-12 text-center flex flex-col items-center justify-center shadow-lg">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
+                <Bookmark className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-semibold text-zinc-100">
+                Your Bidding Pipeline is Empty
+              </h3>
+              <p className="text-xs text-zinc-400 max-w-md mt-1.5 mb-6 leading-relaxed">
+                Track and move prospective government bids through your pipeline (Bookmarked ➔ Feasibility ➔ Pricing ➔ Submitted ➔ Won).
+              </p>
+              <button
+                onClick={() => setActiveTab('all')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer shadow-sm"
+              >
+                <Compass className="w-4 h-4 text-emerald-400" />
+                Explore All Tenders
+              </button>
+            </div>
+          ) : (
+            <PipelineKanban
+              bids={bids}
+              savedIds={savedIds}
+              getStage={getStage}
+              updateStage={updateStage}
+              onRemove={toggleSave}
+              onSelectBid={setSelectedBid}
+              onOpenAIBrief={setBriefBid}
+              currentTime={currentTime}
+            />
+          )
+        ) : (
+          /* Tab 3: All Tenders Explorer with Filter Sidebar */
+          <div className="flex items-start gap-6">
+            <FilterSidebar
+              departments={departmentCounts}
+              keywords={keywordCounts}
+              filters={filters}
+              setFilters={setFilters}
+              totalMatching={sortedBids.length}
+              totalBids={totalBidsCount}
+              onReset={handleResetFilters}
+              isOpenMobile={isMobileFiltersOpen}
+              onCloseMobile={() => setIsMobileFiltersOpen(false)}
+            />
 
-          {/* Results Area */}
-          <div className="flex-1 min-w-0">
-            {activeTab === 'saved' && sortedBids.length === 0 ? (
-              /* Empty State for Saved Pipeline */
-              <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-12 text-center flex flex-col items-center justify-center shadow-lg">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mb-4">
-                  <Bookmark className="w-7 h-7" />
+            {/* Results Area */}
+            <div className="flex-1 min-w-0">
+              {sortedBids.length === 0 ? (
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-12 text-center flex flex-col items-center justify-center">
+                  <AlertCircle className="w-12 h-12 text-zinc-600 mb-3" />
+                  <h3 className="text-base font-semibold text-zinc-200">
+                    No matching tenders found
+                  </h3>
+                  <p className="text-xs text-zinc-500 max-w-sm mt-1 mb-5">
+                    Try adjusting or clearing your search term, department filters, or urgency parameters.
+                  </p>
+                  <button
+                    onClick={handleResetFilters}
+                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors cursor-pointer"
+                  >
+                    Reset all filters
+                  </button>
                 </div>
-                <h3 className="text-lg font-semibold text-zinc-100">
-                  Your Saved Pipeline is Empty
-                </h3>
-                <p className="text-xs text-zinc-400 max-w-md mt-1.5 mb-6 leading-relaxed">
-                  Track and monitor prospective government bids here. Click the bookmark icon at the top-right of any tender card or table row to bookmark bids into your personal pipeline.
-                </p>
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-all cursor-pointer shadow-sm hover:shadow"
-                >
-                  <Compass className="w-4 h-4 text-emerald-400" />
-                  Explore All Tenders
-                </button>
-              </div>
-            ) : sortedBids.length === 0 ? (
-              /* Standard Empty Filter State */
-              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-12 text-center flex flex-col items-center justify-center">
-                <AlertCircle className="w-12 h-12 text-zinc-600 mb-3" />
-                <h3 className="text-base font-semibold text-zinc-200">
-                  No matching tenders found
-                </h3>
-                <p className="text-xs text-zinc-500 max-w-sm mt-1 mb-5">
-                  Try adjusting or clearing your search term, department filters, or urgency parameters.
-                </p>
-                <button
-                  onClick={handleResetFilters}
-                  className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white transition-colors cursor-pointer"
-                >
-                  Reset all filters
-                </button>
-              </div>
-            ) : viewMode === 'cards' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sortedBids.map((bid) => (
-                  <TenderCard
-                    key={bid.id}
-                    bid={bid}
-                    onSelect={setSelectedBid}
-                    isSaved={isSaved(bid.id)}
-                    onToggleSave={() => toggleSave(bid.id)}
-                    currentTime={currentTime}
-                  />
-                ))}
-              </div>
-            ) : (
-              <TenderTable
-                bids={sortedBids}
-                onSelect={setSelectedBid}
-                savedIds={savedIds}
-                onToggleSave={toggleSave}
-                currentTime={currentTime}
-              />
-            )}
+              ) : viewMode === 'cards' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sortedBids.map((bid) => (
+                    <TenderCard
+                      key={bid.id}
+                      bid={bid}
+                      onSelect={setSelectedBid}
+                      onOpenAIBrief={setBriefBid}
+                      isSaved={isSaved(bid.id)}
+                      onToggleSave={() => toggleSave(bid.id)}
+                      currentTime={currentTime}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <TenderTable
+                  bids={sortedBids}
+                  onSelect={setSelectedBid}
+                  savedIds={savedIds}
+                  onToggleSave={toggleSave}
+                  currentTime={currentTime}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Tender Quick Preview Slide-over / Modal */}
@@ -360,6 +399,12 @@ export function TenderExplorer({ initialBids }: TenderExplorerProps) {
         isSaved={selectedBid ? isSaved(selectedBid.id) : false}
         onToggleSave={() => selectedBid && toggleSave(selectedBid.id)}
         currentTime={currentTime}
+      />
+
+      {/* AI Tender Brief & Clause Extractor Modal */}
+      <AIBriefModal
+        bid={briefBid}
+        onClose={() => setBriefBid(null)}
       />
     </div>
   );

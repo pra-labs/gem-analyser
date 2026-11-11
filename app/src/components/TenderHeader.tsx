@@ -13,6 +13,9 @@ import {
   Building,
   Tag,
   Hash,
+  BarChart3,
+  Kanban,
+  Sparkles,
 } from 'lucide-react';
 import { SortOption, Bid } from '@/types/bid';
 
@@ -21,8 +24,8 @@ interface HeaderProps {
   onSearchChange: (q: string) => void;
   viewMode: 'cards' | 'table';
   onViewModeChange: (m: 'cards' | 'table') => void;
-  activeTab: 'all' | 'saved';
-  onTabChange: (t: 'all' | 'saved') => void;
+  activeTab: 'all' | 'saved' | 'analytics';
+  onTabChange: (t: 'all' | 'saved' | 'analytics') => void;
   savedCount: number;
   sortBy: SortOption;
   onSortChange: (s: SortOption) => void;
@@ -124,15 +127,15 @@ export function TenderHeader({
               GeM Tender Intelligence
             </h1>
             <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              LIVE
+              AI COMMAND CENTER
             </span>
           </div>
           <p className="text-xs text-zinc-400 mt-1">
-            Real-time government procurement discovery, high-density filtering & specs viewer
+            Real-time public procurement discovery, algorithmic fit scoring & bidding pipeline
           </p>
         </div>
 
-        {/* Tab switcher: All Tenders vs Saved Pipeline */}
+        {/* Tab switcher: All Tenders vs Saved Pipeline Kanban vs Intelligence Analytics */}
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900 border border-zinc-800 self-start sm:self-auto">
           <button
             onClick={() => onTabChange('all')}
@@ -154,159 +157,175 @@ export function TenderHeader({
                 : 'text-zinc-500 opacity-70 hover:opacity-100'
             }`}
           >
-            <BookmarkCheck className={`w-3.5 h-3.5 ${savedCount > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
-            Saved Pipeline ({savedCount})
+            <Kanban className={`w-3.5 h-3.5 ${savedCount > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
+            Pipeline Kanban ({savedCount})
+          </button>
+          <button
+            onClick={() => onTabChange('analytics')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+              activeTab === 'analytics'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm'
+                : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
+            Intelligence & Trends
           </button>
         </div>
       </div>
 
-      {/* Control Bar: Search Input with Autocomplete, Sorting, View Toggle, Export, Mobile Filter Button */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search Bar with Autocomplete Dropdown */}
-        <div className="relative flex-1" ref={searchContainerRef}>
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              onSearchChange(e.target.value);
-              setShowSuggestions(true);
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            placeholder="Search by tender title, category, bid number, department..."
-            className="w-full pl-10 pr-9 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-inner"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+      {/* Control Bar: Active only when on tenders view */}
+      {activeTab !== 'analytics' && (
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Bar with Autocomplete Dropdown */}
+          <div className="relative flex-1" ref={searchContainerRef}>
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                onSearchChange(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              placeholder="Search by tender title, category, bid number, department..."
+              className="w-full pl-10 pr-9 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all shadow-inner"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => onSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
 
-          {/* Autocomplete Suggestions Dropdown */}
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1.5 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl z-40 overflow-hidden text-xs">
-              <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-900 bg-zinc-900/40">
-                Suggested Matches
-              </div>
-              <div className="max-h-60 overflow-y-auto divide-y divide-zinc-900 scrollbar-thin">
-                {suggestions.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      onSearchChange(item.label);
-                      setShowSuggestions(false);
-                    }}
-                    className="w-full px-3.5 py-2 flex items-center justify-between hover:bg-zinc-900 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      {item.type === 'bid' && <Hash className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                      {item.type === 'dept' && <Building className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
-                      {item.type === 'keyword' && <Tag className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
-                      <span className="text-zinc-200 truncate">{item.label}</span>
-                      {item.sub && (
-                        <span className="text-zinc-500 text-[11px] truncate max-w-xs">({item.sub})</span>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase ml-2">
-                      {item.type}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right Tools Toolbar */}
-        <div className="flex items-center gap-2 self-end md:self-auto">
-          {/* Mobile Filter Trigger */}
-          <button
-            onClick={onOpenMobileFilters}
-            className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Filters
-          </button>
-
-          {/* Sort By Dropdown */}
-          <select
-            value={sortBy}
-            onChange={(e) => onSortChange(e.target.value as SortOption)}
-            className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 cursor-pointer"
-          >
-            <option value="closing_soon">⚡ Closing Soonest</option>
-            <option value="closing_latest">⏳ Closing Latest</option>
-            <option value="quantity_high">📦 Quantity: High to Low</option>
-            <option value="quantity_low">📦 Quantity: Low to High</option>
-            <option value="recent_start">🆕 Recently Published</option>
-          </select>
-
-          {/* Cards vs Table View Toggle */}
-          <div className="flex items-center p-0.5 rounded-xl bg-zinc-900 border border-zinc-800">
-            <button
-              onClick={() => onViewModeChange('cards')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                viewMode === 'cards'
-                  ? 'bg-zinc-800 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-              title="Card Grid View"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onViewModeChange('table')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-zinc-800 text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-              title="High-Density Table View"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Export Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-
-            {showExportMenu && (
-              <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-zinc-950 border border-zinc-800 shadow-xl py-1 z-30 text-xs">
-                <button
-                  onClick={() => {
-                    onExportCSV();
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                  CSV Format
-                </button>
-                <button
-                  onClick={() => {
-                    onExportJSON();
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
-                >
-                  <FileCode className="w-3.5 h-3.5 text-cyan-400" />
-                  JSON Format
-                </button>
+            {/* Autocomplete Suggestions Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1.5 bg-zinc-950 border border-zinc-800 rounded-xl shadow-2xl z-40 overflow-hidden text-xs">
+                <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-900 bg-zinc-900/40">
+                  Suggested Matches
+                </div>
+                <div className="max-h-60 overflow-y-auto divide-y divide-zinc-900 scrollbar-thin">
+                  {suggestions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        onSearchChange(item.label);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full px-3.5 py-2 flex items-center justify-between hover:bg-zinc-900 text-left transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        {item.type === 'bid' && <Hash className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
+                        {item.type === 'dept' && <Building className="w-3.5 h-3.5 text-zinc-500 shrink-0" />}
+                        {item.type === 'keyword' && <Tag className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                        <span className="text-zinc-200 truncate">{item.label}</span>
+                        {item.sub && (
+                          <span className="text-zinc-500 text-[11px] truncate max-w-xs">({item.sub})</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-500 uppercase ml-2">
+                        {item.type}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+
+          {/* Right Tools Toolbar */}
+          <div className="flex items-center gap-2 self-end md:self-auto">
+            {/* Mobile Filter Trigger */}
+            <button
+              onClick={onOpenMobileFilters}
+              className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 hover:text-white"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+            </button>
+
+            {/* Sort By Dropdown */}
+            <select
+              value={sortBy}
+              onChange={(e) => onSortChange(e.target.value as SortOption)}
+              className="px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 focus:outline-none focus:border-zinc-700 cursor-pointer"
+            >
+              <option value="fit_score_desc">🎯 AI Fit Score: High to Low</option>
+              <option value="closing_soon">⚡ Closing Soonest</option>
+              <option value="closing_latest">⏳ Closing Latest</option>
+              <option value="quantity_high">📦 Quantity: High to Low</option>
+              <option value="quantity_low">📦 Quantity: Low to High</option>
+              <option value="recent_start">🆕 Recently Published</option>
+            </select>
+
+            {/* Cards vs Table View Toggle (only in All Tenders) */}
+            {activeTab === 'all' && (
+              <div className="flex items-center p-0.5 rounded-xl bg-zinc-900 border border-zinc-800">
+                <button
+                  onClick={() => onViewModeChange('cards')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === 'cards'
+                      ? 'bg-zinc-800 text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="Card Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onViewModeChange('table')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === 'table'
+                      ? 'bg-zinc-800 text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                  title="High-Density Table View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Export Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 hover:text-white transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-zinc-950 border border-zinc-800 shadow-xl py-1 z-30 text-xs">
+                  <button
+                    onClick={() => {
+                      onExportCSV();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                    CSV Format
+                  </button>
+                  <button
+                    onClick={() => {
+                      onExportJSON();
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-zinc-300 hover:bg-zinc-900 flex items-center gap-2 cursor-pointer"
+                  >
+                    <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+                    JSON Format
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
