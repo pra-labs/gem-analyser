@@ -184,18 +184,18 @@ export function TenderCard({
           Quick View
         </button>
 
-        {/* Clean Pipeline CTA: Single '+' and clean 'Track' / 'In Pipeline' label */}
+        {/* Pipeline Button: Elevated surface with subtle border for high-contrast visibility */}
         <button
           onClick={onToggleSave}
-          className={`px-2.5 py-1.5 rounded-lg border text-xs font-medium inline-flex items-center gap-1 transition-all cursor-pointer ${
+          className={`px-3 py-1.5 rounded-lg border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer ${
             isSaved
-              ? 'bg-orange-500/20 border-orange-500/50 text-orange-300'
-              : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:border-zinc-700'
+              ? 'bg-orange-500/20 border-orange-500/50 text-orange-300 shadow-sm'
+              : 'bg-zinc-800/90 hover:bg-zinc-700/90 text-zinc-100 border-zinc-700 shadow-sm active:scale-[0.98]'
           }`}
-          title={isSaved ? 'In Kanban Pipeline' : 'Track in Pipeline'}
+          title={isSaved ? 'In Kanban Pipeline' : 'Add to Pipeline'}
         >
-          {isSaved ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Plus className="w-3.5 h-3.5" />}
-          <span>{isSaved ? 'Tracked' : 'Track'}</span>
+          {isSaved ? <Check className="w-3.5 h-3.5 text-orange-400" /> : <Plus className="w-3.5 h-3.5 text-zinc-300" />}
+          <span>{isSaved ? 'In Pipeline' : '+ Pipeline'}</span>
         </button>
 
         {/* Clear Tool Buttons: AI Brief + GeM PDF */}
